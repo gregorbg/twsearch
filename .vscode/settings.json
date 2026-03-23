@@ -8,9 +8,12 @@
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "files.associations": {
-    "*.html": "html",
-    "*.Makefile": "makefile",
-    "libtwips_ffi.h": "c"
-  }
+  "[ruby]": {
+    "editor.defaultFormatter": "Shopify.ruby-lsp"
+  },
+  "rubyLsp.rubyVersionManager": {
+    "identifier": "rv"
+  },
+  "rubyLsp.bundleGemfile": "./src/ruby-gem/Gemfile",
+  "rubyLsp.formatter": "rubocop"
 }

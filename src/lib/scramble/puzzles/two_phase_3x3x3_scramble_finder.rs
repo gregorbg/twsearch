@@ -9,7 +9,6 @@ use rand::Rng;
 
 use crate::{
     _internal::{
-        cli::args::VerbosityLevel,
         errors::SearchError,
         search::{
             filter::filtering_decision::FilteringDecision,
@@ -24,7 +23,7 @@ use crate::{
             },
             mask_pattern::apply_mask,
             move_count::MoveCount,
-            search_logger::SearchLogger,
+            search_logger::{SearchLogger, VerbosityLevel},
         },
     },
     scramble::{
@@ -175,8 +174,8 @@ impl SolvingBasedScrambleFinder for TwoPhase3x3x3ScrambleFinder {
             ),
             TwoPhase3x3x3PrefixOrSuffixConstraints::ForFMC => {
                 let fmc_affix_alg = FMC_AFFIX_ALG.clone();
-                let a = fmc_affix_alg.invert();
-                let search_pattern = apply_pre_alg(pattern, &(a))
+                let fmc_affix_alg_inverse = fmc_affix_alg.invert();
+                let search_pattern = apply_pre_alg(pattern, &(fmc_affix_alg_inverse))
                     .unwrap()
                     .apply_alg(&fmc_affix_alg.invert())
                     .unwrap();

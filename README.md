@@ -20,7 +20,17 @@ Twizzle Search powers alg search and scramble functionality for [Twizzle](https:
     - Great performance out of the box for a wide variety of puzzles.
     - Tunable optimizations for heavy-duty searches, including reusable prune tables for time-memory tradeoff.
 
-## Example usage
+## Usage
+
+### Using `cubing.js`
+
+`twips` powers scrambling and searching in `cubing.js`:
+
+- [`randomScrambleForEvent(…)`](https://js.cubing.net/cubing/scramble/)
+- [`experimentalSolveTwips(…)`](https://js.cubing.net/cubing/api/functions/search.experimentalSolveTwips.html)
+- [Experimental text UI](https://experiments.cubing.net/cubing.js/twips/text-ui.html)
+
+### Command-line usage
 
 Install using one of:
 
@@ -29,8 +39,8 @@ Install using one of:
 brew install --HEAD cubing/cubing/twips
 
 # cargo (using `rustup`: https://rustup.rs/)
-cargo install --no-default-features twips-cli # option 1: without SIMD
-cargo +nightly install twips-cli # option 2: with experimental SIMD
+cargo install --locked --no-default-features twips-cli # option 1: without SIMD
+cargo +nightly install --locked twips-cli # option 2: with experimental SIMD
 twips completions <your shell> # Get completions for your shell
 
 # From the source repo
@@ -50,8 +60,8 @@ Examples (using files in the repo):
 twips search \
   --generator-moves "U,F,R" \
   --min-num-solutions 10 \
-  samples/json/3x3x3/3x3x3-Reid.def.json \
-  samples/json/3x3x3/T-perm.scramble.json
+  samples/3x3x3/3x3x3-Reid.def.json \
+  samples/3x3x3/T-perm.scramble.json
 ```
 
 ```shell
@@ -68,7 +78,7 @@ twips solve-known-puzzle 3x3x3 "U' F2 U' R2 F2 D' B2 D B2 U L2 U2 R2 L2 F2 L' D2
 # Calculate the graphs for God's algorithm for 2×2×2
 twips gods-algorithm \
   --generator-moves U,F,R \
-  samples/json/2x2x2/2x2x2.kpuzzle.json
+  samples/2x2x2/2x2x2.kpuzzle.json
 ```
 
 ```shell
@@ -126,6 +136,7 @@ twips \
 - Rust and `cargo` via [`rustup`](https://rustup.rs/).
   - Note that this project uses [`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file), which effectively requires `rustup` to manage Rust toolchain versions.
 - [`bun`](https://bun.sh/)
+- [`rv`](https://github.com/spinel-coop/rv)
 
 ## License
 

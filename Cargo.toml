@@ -1,16 +1,24 @@
 [workspace]
 resolver = "2"
-members = ["src/lib", "src/cli", "src/ffi", "src/wasm", "script/cargo-run-bin"]
+members = [
+  "src/lib",
+  "src/cli",
+  "src/ffi",
+  "src/ruby-gem/ext/twips",
+  "src/wasm",
+  "script/cargo-run-bin",
+]
 default-members = ["src/cli"]
 
 [workspace.package]
-version = "0.11.3-dev"
+version = "0.12.1-dev"
 license = "MPL-2.0"
 edition = "2021"
 repository = "https://github.com/cubing/twips"
 
 [workspace.dependencies]
-cubing = "0.15.0-pre.1"
+cubing = "0.15.2"
+twips = { version = "0.12.1-dev", path = "./src/lib/" }
 
 [workspace.metadata.bin]
 cbindgen = { version = "0.27.0" }

@@ -1,9 +1,10 @@
-#!/usr/bin/env bun
+#!/usr/bin/env -S bun run --
 
 import assert from "node:assert";
 import { es2022Lib } from "@cubing/dev-config/esbuild/es2022";
 import { build } from "esbuild";
 import { Path } from "path-class";
+import { PrintableShellCommand } from "printable-shell-command";
 
 const distDir = Path.resolve("../dist/wasm/", import.meta.url);
 
@@ -69,9 +70,13 @@ assert(wasmSize > 32 * KiB); // Make sure the file exists and has some contents.
  */
 assert(secondsToDownloadUsing3G(wasmSize) < 7);
 
-// TODO: bump `@lgarron-bin/repo` with a fix (`latest(tags()::@-)'` instead of `latest(tags())::@-`).
-// const version = await $`bun x -- @lgarron-bin/repo version describe`.text();
-const version = "v0.9.99";
+const version = await new PrintableShellCommand("bun", [
+  "x",
+  "--",
+  "@lgarron-bin/repo",
+  "version",
+  "describe",
+]).text();
 
 await build({
   ...es2022Lib(),
@@ -81,6 +86,6 @@ await build({
   loader: { ".wasm": "binary" },
   outdir: distDir.path,
   banner: {
-    js: `// Generated from \`twips\` ${version}`,
+    js: `// Generated from \`twips\` ${version}\n\n// @ts-nocheck\n`,
   },
 });

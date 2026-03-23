@@ -8,29 +8,37 @@ build: \
 check: lint test build
 
 .PHONY: setup
-setup: setup-js setup-gitignore-dirs setup-rust
+setup: setup-js setup-gitignore-dirs setup-rust setup-ruby
 
 .PHONY: test
 test: \
 	test-warning \
 	test-rust \
 	test-rust-ffi \
-	benchmark-rust
+	benchmark-rust \
+	test-scripts \
+	test-ruby
 
 .PHONY: test-warning
 test-warning:
 	@echo "Warning: tests are slow to run right now."
 
+.PHONY: test-scripts
+test-scripts:
+	bun run -- 'script/cubing-def.ts' 2x2x2
+
+RM_RF = bun -e 'process.argv.slice(1).map(p => process.getBuiltinModule("node:fs").rmSync(p, {recursive: true, force: true, maxRetries: 5}))' --
+
 .PHONY: clean
 clean:
-	rm -rf ./.temp ./build ./dist ./src/js/generated-wasm/twips.* ./package-lock.json
+	${RM_RF} ./.temp ./build ./dist ./src/js/generated-wasm/twips.* ./package-lock.json ./src/ruby-gem/tmp ./src/ruby-gem/lib/twips/twips_rb.bundle 
 
 .PHONY: reset
 reset: clean
-	rm -rf ./emsdk ./node_modules ./target ./.bin
+	${RM_RF} ./emsdk ./node_modules ./target ./.bin ./src/ruby-gem/target
 
 .PHONY: lint
-lint: lint-js lint-rust
+lint: lint-js lint-rust lint-ruby
 
 .PHONY: format
 format: format-js format-rust
@@ -40,7 +48,7 @@ publish: test-rust publish-rust
 
 .PHONY: setup-gitignore-dirs
 setup-gitignore-dirs: setup-js-deps
-	bun run ./script/self-gitignore-dirs.ts ./.bin ./.temp ./dist ./target
+	bun run ./script/self-gitignore-dirs.ts ./.bin ./.temp ./dist ./target ./src/ruby-gem/target
 
 .PHONY: check-engine-versions
 check-engine-versions:
@@ -62,12 +70,12 @@ build-rust:
 
 .PHONY: lint-rust
 lint-rust: test-cargo-doc
-	cargo clippy -- --deny warnings
+	cargo clippy --workspace --all-targets -- --deny warnings
 	cargo fmt --check
 
 .PHONY: format-rust
 format-rust:
-	cargo clippy --fix --allow-no-vcs
+	cargo clippy --workspace --all-targets --fix --allow-dirty -- --deny warnings
 	cargo fmt
 
 .PHONY: publish-rust
@@ -75,7 +83,7 @@ publish-rust: publish-rust-main publish-rust-ffi
 
 .PHONY: publish-rust-main
 publish-rust-main:
-	cargo publish --workspace --exclude cargo-bin --exclude twips-ffi
+	cargo publish --workspace --exclude cargo-bin --exclude twips-rb --exclude twips-ffi
 
 .PHONY: setup-rust
 setup-rust: setup-gitignore-dirs
@@ -96,7 +104,7 @@ test-rust-build-version: build-rust
 .PHONY: test-rust-lib
 test-rust-lib: setup-rust test-cargo-doc
 	# `twips-ffi` is covered by `make test-rust-ffi-rs`
-	cargo test --workspace --exclude twips-ffi
+	cargo test --workspace --exclude twips-ffi --exclude twips-rb
 
 .PHONY: test-cargo-doc
 test-cargo-doc: setup-rust
@@ -127,7 +135,7 @@ test-rust-example-readme_example: setup-rust
 
 .PHONY: benchmark-rust
 benchmark-rust: setup-rust
-	cargo run --release -- benchmark samples/json/benchmark/benchmark-3x3x3.def.json
+	cargo run --release -- benchmark samples/benchmark/benchmark-3x3x3.def.json
 
 # Rust WASM
 
@@ -178,22 +186,55 @@ publish-rust-ffi: setup-rust
 .PHONY: setup-js
 setup-js: setup-js-deps setup-gitignore-dirs
 
-
 .PHONY: setup-js-deps
 setup-js-deps: check-engine-versions
 	bun install --frozen-lockfile > /dev/null
 
 .PHONY: lint-js
-lint-js: lint-js-biome lint-js-tsc
+lint-js: lint-js-biome lint-js-tsc lint-import-restrictions
 
 .PHONY: lint-js-biome
 lint-js-biome: setup-js
-	bun x @biomejs/biome check
+	bun x -- bun-dx --package @biomejs/biome biome -- check
 
 .PHONY: lint-js-tsc
 lint-js-tsc: setup-js build-rust-wasm
-	bun x tsc --noEmit --project .
+	bun x -- bun-dx --package typescript tsc -- --noEmit --project ./tsconfig.json
+
+.PHONY: lint-import-restrictions
+lint-import-restrictions: build-rust-wasm
+	bun run -- './script/lint-import-restrictions.ts'
 
 .PHONY: format-js
 format-js: setup-js
-	bun x @biomejs/biome check --write
+	bun x -- bun-dx --package @biomejs/biome biome -- check --write
+
+RUBY = env RUBY_TS_ON_CWD_MISMATCH=ignore ./script/ruby.ts --
+
+.PHONY: test-ruby
+test-ruby: build-ruby
+	${RUBY} ./test/test_api.rb
+	# TODO: https://github.com/spinel-coop/rv/issues/233
+	${RUBY} -e "system(\"cargo test --package twips-rb\")"
+
+.PHONY: lint-ruby
+lint-ruby:
+	bun run -- script/ruby-version/check.ts
+	${RUBY} -S rubocop
+
+.PHONY: format-ruby
+format: format-ruby
+format-ruby:
+	${RUBY} -S rubocop --autocorrect
+
+.PHONY: build-ruby
+build-ruby: setup-ruby
+	${RUBY} -S rake compile
+
+.PHONY: setup-ruby
+setup-ruby:
+	${RUBY} -S bundle install
+
+.PHONY: ruby-update-lockfile
+ruby-update-lockfile:
+	${RUBY} -S bundle lock
